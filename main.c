@@ -6,7 +6,7 @@
 
 #define WIDTH 80
 
-char memory[400*1024];
+char memory[200*1024];
 
 FILE* myFile=NULL;
 
@@ -58,8 +58,8 @@ void __attribute__((noinline)) writeCharacterToFile(char c) {
                 char *space = strchr(writeBuffer+1+5,' ');
                 if (space != NULL) {
                     *space = 0;
-                    myFile = fopen(writeBuffer+1+5,"r");
                 }
+                myFile = fopen(writeBuffer+1+5,"r");
             }
         }
         writeBufferPos = 0;
@@ -70,7 +70,8 @@ void __attribute__((noinline)) writeCharacterToFile(char c) {
     }
 }
 
-char __attribute__((noinline)) readCharacter(char c) {
+char __attribute__((noinline)) readCharacter(void) {
+
     if (!isTextCursorVisible())
         updateTextCursor(1);
     
@@ -85,17 +86,23 @@ char __attribute__((noinline)) readCharacter(char c) {
 }
 
 char readCharacterFromFile(void) {
-    if (myFile == NULL)
+    if (myFile == NULL) {
         return 26;
-    else {
-        int c = fgetc(myFile);
-        if (c<0) {
-            fclose(myFile);
-            myFile = NULL;
-            return 26;
-        }
-        return c;
     }
+
+    int c = fgetc(myFile);
+    if (c<0) {
+        fclose(myFile);
+        myFile = NULL;
+        return 26;
+    }
+    
+    if (c == 0x0A)
+        return 0x0D;
+    else if (c == 0x0D)
+        return 0;
+    
+    return c;
 }
 
 void __attribute__((noinline)) drawString(char* s) {
@@ -114,6 +121,6 @@ main(int argc, char** argv) {
     drawString("ehbasic starting...\n");
     
     asm("move.l #memory,%A0\n"
-        "move.l #(400*1024),%D0\n"
+        "move.l #(200*1024),%D0\n"
         "jmp LAB_COLD\n");
 }
