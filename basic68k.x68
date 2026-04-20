@@ -212,49 +212,25 @@ VEC_LD
  ifne   FLASH_SUPPORT
 
 VEC_LD  
-        LEA             LAB_FILENAME(PC),A0             * Prompt for filename.
-        BSR             PRINTSTRING1                    * Print null terminated string
-        MOVE.L          A3,A2                           * Save pointer to RAM variables
-GETFN1  JSR             VEC_IN                          * Get character
-        BCC             GETFN1                          * Go back if carry clear, indicating no key pressed
-        CMP.B           #$0A,D0                         * Was it <LF>?
-        BEQ             GETFN1                          * If so, ignore
-        JSR             VEC_OUT                         * Echo the character
-        CMP.B           #$0D,D0                         * Was it <Return>?
-        BEQ             ENDLN1                          * If so, branch
-        CMP.B           #$7F,D0                         * Was it <Delete>?
-        BEQ             DELETE1                         * If so, handle delete
-        CMP.B           #$08,D0                         * Was it <Backspace?
-        BEQ             DELETE1                         * If so, handle as delete
-        MOVE.B          D0,load_filename(A2)            * Save in buffer
-        ADDQ.L          #1,A2                           * Advance string pointer
-        BRA             GETFN1                          * Go back and get next character
-DELETE1 SUBQ.L          #1,A2                           * Delete last character entered
-        BRA             GETFN1                          * Go back and get next character
+        MOVEM.L     A0-A1/D1,-(A7)
+        JSR         openReadFile
+        MOVEM.L     (A7)+,A0-A1/D1
+        TST.B       D0
+        BEQ         NOREAD
 
-ENDLN1  MOVE.B          #0,load_filename(A2)            * Add terminating null to filename
+        LEA.L       VEC_IN2,A0                      * Redirect input from aux. port.
+        MOVE.L      A0,V_INPTv(a3)
 
-        LEA      LAB_READN(pc),A0 * Send READ command string
-        BSR      PRINTSTRING2   * Print null terminated string
-
-        LEA      load_filename(A3),A0 * Send filename string
-        BSR      PRINTSTRING2   * Print null terminated string
-
-        MOVE.B   #$0D,D0        * Send newline
-        JSR      VEC_OUT2
-
-        LEA.L           VEC_IN2,A0                      * Redirect input from aux. port.
-        MOVE.L          A0,V_INPTv(a3)
-
-        LEA.L    VEC_OUT3,A0     * VEC_OUT3: Redirect output to /dev/null.
-        MOVE.L   A0,V_OUTPv(a3)
+        LEA.L       VEC_OUT3,A0     * VEC_OUT3: Redirect output to /dev/null.
+        MOVE.L      A0,V_OUTPv(a3)
         
-        BSR		LAB_1463			* do "NEW" and "CLEAR"
-        BRA     LAB_127D            * parse command without "Ready"
+        BSR		    LAB_1463			* do "NEW" and "CLEAR"
+        BRA         LAB_127D            * parse command without "Ready"
 
 * Input routine will detect end of file and redirect input back to
 * console port.
 
+NOREAD
         RTS
 
  endc

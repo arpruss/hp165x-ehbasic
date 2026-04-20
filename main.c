@@ -104,9 +104,13 @@ uint8_t openReadFile(void) {
         return 0;
     if (myFile != NULL)
         fclose(myFile);
-    myFile = fopen(pickFileNamer(i), "r");
+    char* n = pickFileNamer(i);
+    myFile = fopen(n, "r");
     if (myFile == NULL)
         return 0;
+    putText("[loading ");
+    putText(n);
+    putText("]\n");
     return 1;
 }
 
@@ -138,7 +142,7 @@ void __attribute__((noinline)) writeCharacterToFile(char c) {
         if (c == 26) { 
             fclose(myFile);
             myFile = NULL;
-            putText("[loaded]\n");
+            putText("[saved]\n");
             return;
         }
         fputc(c, myFile);
@@ -151,16 +155,11 @@ void __attribute__((noinline)) writeCharacterToFile(char c) {
                 fclose(myFile);
             if (!strncmp(writeBuffer+1,"WRITE ",6)) {
                 myFile = fopen(writeBuffer+1+6,"w");
-            }
-            else if (!strncmp(writeBuffer+1,"READ ",5)) {
-                char *space = strchr(writeBuffer+1+5,' ');
-                if (space != NULL) {
-                    *space = 0;
+                if (myFile != NULL) {
+                    putText("[saving ");
+                    putText(writeBuffer+1+6);
+                    putText("]\n");
                 }
-                if (writeBuffer[1+5]) 
-                    myFile = fopen(writeBuffer+1+5,"r");
-                else 
-                    openReadFile();
             }
         }
         writeBufferPos = 0;
@@ -195,6 +194,7 @@ char readCharacterFromFile(void) {
     if (c<0) {
         fclose(myFile);
         myFile = NULL;
+        putText("[loaded]\n");
         return 26;
     }
     
@@ -220,7 +220,6 @@ main(int argc, char** argv) {
 	
 	initKeyboard(1);
 	initScreen(392, WRITE_BLACK);
-    drawString("ehbasic starting...\n");
     
     asm("move.l #memory,%A0\n"
         "move.l #" _QUOTE(MEMORY_SIZE) ",%D0\n"
