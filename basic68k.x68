@@ -246,8 +246,8 @@ ENDLN1  MOVE.B          #0,load_filename(A2)            * Add terminating null t
         LEA.L           VEC_IN2,A0                      * Redirect input from aux. port.
         MOVE.L          A0,V_INPTv(a3)
 
-*        LEA.L    VEC_OUT3,A0     * VEC_OUT3: Redirect output to /dev/null.
-*        MOVE.L   A0,V_OUTPv(a3)
+        LEA.L    VEC_OUT3,A0     * VEC_OUT3: Redirect output to /dev/null.
+        MOVE.L   A0,V_OUTPv(a3)
         
         BSR		LAB_1463			* do "NEW" and "CLEAR"
         BRA     LAB_127D            * parse command without "Ready"
