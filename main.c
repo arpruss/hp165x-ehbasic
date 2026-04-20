@@ -10,8 +10,6 @@
 #define MAX_PICK_FILES 144
 
 char memory[MEMORY_SIZE];
-char writeBuffer[32];
-unsigned short writeBufferPos=0;
 FILE* myFile=NULL;
 
 static uint16_t pickFileList[MAX_PICK_FILES];
@@ -106,9 +104,25 @@ uint8_t openReadFile(void) {
         fclose(myFile);
     char* n = pickFileNamer(i);
     myFile = fopen(n, "r");
-    if (myFile == NULL)
+    if (myFile == NULL) {
+        putText("\n[failed]\n");
         return 0;
+    }
     putText("[loading ");
+    putText(n);
+    putText("]\n");
+    return 1;
+}
+
+uint8_t openWriteFile(const char* n) {
+    if (myFile != NULL)
+        fclose(myFile);
+    myFile = fopen(n, "w");
+    if (myFile == NULL) {
+        putText("\n[failed]\n");
+        return 0;
+    }
+    putText("\n[saving ");
     putText(n);
     putText("]\n");
     return 1;
@@ -147,26 +161,6 @@ void __attribute__((noinline)) writeCharacterToFile(char c) {
         }
         fputc(c, myFile);
         return;
-    }
-    if (c == '\r') {
-        writeBuffer[writeBufferPos] = 0;
-        if (writeBuffer[0] == '$') {
-            if (myFile != NULL)
-                fclose(myFile);
-            if (!strncmp(writeBuffer+1,"WRITE ",6)) {
-                myFile = fopen(writeBuffer+1+6,"w");
-                if (myFile != NULL) {
-                    putText("[saving ");
-                    putText(writeBuffer+1+6);
-                    putText("]\n");
-                }
-            }
-        }
-        writeBufferPos = 0;
-    }
-    else {
-        if (writeBufferPos + 1u < sizeof(writeBuffer))
-            writeBuffer[writeBufferPos++] = c;
     }
 }
 

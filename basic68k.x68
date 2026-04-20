@@ -255,9 +255,6 @@ VEC_SV
 VEC_SV  LEA             LAB_FILENAME(PC),A0             * Prompt for filename.
         BSR             PRINTSTRING1                    * Print null terminated string
         MOVE.L          A3,A2                           * Save pointer to RAM variables
-*        MOVE.B          #'a',load_filename(A2)
-*        ADDQ.L          #1,A2
-*        BRA             ENDLN
 GETFN   JSR             VEC_IN                          * Get character
         BCC             GETFN                           * Go back if carry clear, indicating no key pressed
         JSR             VEC_OUT                         * Echo the character
@@ -274,22 +271,16 @@ DELETE  SUBQ.L          #1,A2                           * Delete last character 
         BRA             GETFN                           * Go back and get next character
 
 ENDLN   MOVE.B          #0,load_filename(A2)            * Add terminating null to filename
+        MOVEM.L         A0-A1/D1,-(A7)
+        PEA             load_filename(A3)
+        JSR             openWriteFile
+        ADDQ            #4,A7
+        MOVEM.L         (A7)+,A0-A1/D1
+        TST.B           D0
+        BEQ             NOWRITE
 
-        LEA.L           VEC_OUT3,A0                     * Redirect output to null
+        LEA.L           VEC_OUT2,A0                     * Redirect output to null
         MOVE.L          A0,V_OUTPv(a3)
-
-        LEA             LAB_WRITE(pc),A0                * Send WRITE command string
-        BSR             PRINTSTRING2                    * Print null terminated string
-
-        LEA             load_filename(A3),A0            * Send filename string
-        BSR             PRINTSTRING2                    * Print null terminated string
-
-        MOVE.B          #$0D,D0                         * Send <Return>
-        JSR             VEC_OUT2
-
-*        MOVE.l          #356000,d0                      * Delay approx. 1 second to allow USB to create file
-*DELAY   SUBQ.l          #1,d0
-*        BNE             DELAY
 
         MOVEQ           #0,d0                           * Tells LIST no arguments
         ANDI.b          #$FE,CCR                        * Clear carry
@@ -300,6 +291,7 @@ ENDLN   MOVE.B          #0,load_filename(A2)            * Add terminating null t
 
         LEA.L           VEC_OUT,A0                      * Redirect output back to console port.
         MOVE.L          A0,V_OUTPv(a3)
+NOWRITE
         RTS                                             * Return
 
 LAB_WRITE
