@@ -162,9 +162,7 @@ RXNOTREADY
         ANDI.B   #$FE,CCR       * Clear the carry, flag character not available
         RTS
 
-* Input routine used in LOAD mode to read file from USB flash storage.
-
- ifne   FLASH_SUPPORT
+* Input routine used in LOAD mode to read file from HP 165xB.
 
 VEC_IN2
 * Read one byte from host
@@ -192,29 +190,43 @@ NOTEOF
         ORI.b    #1,CCR         * Set the carry, flag we got a byte
         RTS                     * Return
 
- endc
-
 *************************************************************************************
 *
-* LOAD routine for the TS2 computer (not implemented)
-
- ifeq   FLASH_SUPPORT
-
-VEC_LD
-       MOVEQ           #$2E,d7                         * error code $2E "Not implemented" error
-       BRA             LAB_XERR                        * do error #d7, then warm start
-
- endc
-
-* LOAD routine for the TS2 computer. Supports a Hobbytronics USB Flash
-* Drive Host Board connected to the auxiliary serial port.
-
- ifne   FLASH_SUPPORT
-
+* LOAD routine for HP 165xB
+ 
 VEC_LD  
+        BSR		LAB_GBYT			* get next BASIC byte
+        BEQ		LAB_LOAD_NO_NAME    * branch if no following
+
+        SUBQ.w	#1,a5				* decrement execute pointer
+        BSR		LAB_GVAL			* get value from line
+        TST.b	Dtypef(a3)			* test data type flag
+        BPL		LAB_TMER			* if type is not string do type mismatch error
+        
+        BSR		LAB_22B6			* pop string off descriptor stack or from memory
+                                    * returns with d0 = length, a0 = pointer
+        BEQ		LAB_FCER			* if null do function call error then warm start
+
+        MOVEA.l	a0,a1				* copy filename pointer
+        ADDA.w	d0,a0				* add length to find end of string
+        MOVE.b	(a0),D1 			* save byte
+        MOVE.B	#0,(a0)			    * null terminate string
+        
+        MOVEM.L         A0-A1/D1,-(A7)
+        MOVE.L          A1,-(A7)
+        JSR             openReadFile
+        ADDQ            #4,A7
+        MOVEM.L         (A7)+,A0-A1/D1
+        MOVE.B          D1,(A0)
+        BRA             LAB_LOAD_OPENED
+
+LAB_LOAD_NO_NAME
         MOVEM.L     A0-A1/D1,-(A7)
+        PEA         0
         JSR         openReadFile
+        ADDQ        #4,A7
         MOVEM.L     (A7)+,A0-A1/D1
+LAB_LOAD_OPENED        
         TST.B       D0
         BEQ         NOREAD
 
@@ -224,7 +236,7 @@ VEC_LD
         LEA.L       VEC_OUT3,A0     * VEC_OUT3: Redirect output to /dev/null.
         MOVE.L      A0,V_OUTPv(a3)
         
-        BSR		    LAB_1463			* do "NEW" and "CLEAR"
+;        BSR		    LAB_1463			* do "NEW" and "CLEAR"
         BRA         LAB_127D            * parse command without "Ready"
 
 * Input routine will detect end of file and redirect input back to
@@ -233,26 +245,42 @@ VEC_LD
 NOREAD
         RTS
 
- endc
-
 *************************************************************************************
 *
-* SAVE routine for the TS2 computer (not implemented)
-
- ifeq   FLASH_SUPPORT
-VEC_SV
-       MOVEQ           #$2E,d7                         * error code $2E "Not implemented" error
-       BRA             LAB_XERR                        * do error #d7, then warm start
- endc
-
- ifne   FLASH_SUPPORT
-
-* SAVE routine for the TS2 computer. Supports a Hobbytronics USB Flash
-* Drive Host Board connected to the auxiliary serial port.
+* SAVE routine for the HP165xB 
 
 * TODO: Make configurable at build time
 
-VEC_SV  LEA             LAB_FILENAME(PC),A0             * Prompt for filename.
+VEC_SV
+        BSR		LAB_GBYT			* get next BASIC byte
+        BEQ		LAB_SAVE_NO_NAME    * branch if no following        
+        CMP.b	#',',d0			    * compare with ","
+        BEQ		LAB_SAVE_NO_NAME		
+        
+        SUBQ.w	#1,a5				* decrement execute pointer
+        BSR		LAB_GVAL			* get value from line
+        TST.b	Dtypef(a3)			* test data type flag
+        BPL		LAB_TMER			* if type is not string do type mismatch error
+        
+        BSR		LAB_22B6			* pop string off descriptor stack or from memory
+                                    * returns with d0 = length, a0 = pointer
+        BEQ		LAB_FCER			* if null do function call error then warm start
+
+        MOVEA.l	a0,a1				* copy filename pointer
+        ADDA.w	d0,a0				* add length to find end of string
+        MOVE.b	(a0),D1 			* save byte
+        MOVE.B	#0,(a0)			    * null terminate string
+        
+        MOVEM.L         A0-A1/D1,-(A7)
+        MOVE.L          A1,-(A7)
+        JSR             openWriteFile
+        ADDQ            #4,A7
+        MOVEM.L         (A7)+,A0-A1/D1
+        MOVE.B          D1,(A0)
+        BRA             LAB_SAVE_OPENED
+
+LAB_SAVE_NO_NAME
+        LEA             LAB_FILENAME(PC),A0             * Prompt for filename.
         BSR             PRINTSTRING1                    * Print null terminated string
         MOVE.L          A3,A2                           * Save pointer to RAM variables
 GETFN   JSR             VEC_IN                          * Get character
@@ -276,6 +304,7 @@ ENDLN   MOVE.B          #0,load_filename(A2)            * Add terminating null t
         JSR             openWriteFile
         ADDQ            #4,A7
         MOVEM.L         (A7)+,A0-A1/D1
+LAB_SAVE_OPENED
         TST.B           D0
         BEQ             NOWRITE
 
@@ -284,6 +313,7 @@ ENDLN   MOVE.B          #0,load_filename(A2)            * Add terminating null t
 
         MOVEQ           #0,d0                           * Tells LIST no arguments
         ANDI.b          #$FE,CCR                        * Clear carry
+        BSR		        LAB_IGBY			            * increment & scan memory
         BSR             LAB_LIST                        * Call LIST routine
 
         MOVEQ           #26,d0                          * Send Control-Z to indicate end of file save operation
@@ -303,7 +333,6 @@ LAB_READN
 LAB_FILENAME
         dc.b            'Filename? ',$00
 
- endc
         even
 
 ****************************************************************************************

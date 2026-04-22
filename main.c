@@ -94,15 +94,17 @@ void hp_clear_window() {
 	setTextXY(savedX,savedY);
 }
 
-uint8_t openReadFile(void) {
-    hp_set_window();
-	short i = hpChooser(1, 1, WIN_X2-WIN_X1-2, WIN_Y2-WIN_Y1-2, 2, 10, pickFileLoader, pickFileNamer, CHOOSER_DISK_BASED);
-    hp_clear_window();
-    if (i < 0)
-        return 0;
+uint8_t openReadFile(const char* n) {
     if (myFile != NULL)
         fclose(myFile);
-    char* n = pickFileNamer(i);
+    if (n == NULL) {
+        hp_set_window();
+        short i = hpChooser(1, 1, WIN_X2-WIN_X1-2, WIN_Y2-WIN_Y1-2, 2, 10, pickFileLoader, pickFileNamer, CHOOSER_DISK_BASED);
+        hp_clear_window();
+        if (i < 0)
+            return 0;
+        n = pickFileNamer(i);
+    }
     myFile = fopen(n, "r");
     if (myFile == NULL) {
         putText("\n[failed]\n");
@@ -115,6 +117,8 @@ uint8_t openReadFile(void) {
 }
 
 uint8_t openWriteFile(const char* n) {
+    if (*n == 0)
+        return 0;
     if (myFile != NULL)
         fclose(myFile);
     myFile = fopen(n, "w");
@@ -154,9 +158,12 @@ void __attribute__((noinline)) drawCharacter(char c) {
 void __attribute__((noinline)) writeCharacterToFile(char c) {
     if (myFile != NULL) {
         if (c == 26) { 
-            fclose(myFile);
+            if (fclose(myFile)<0)
+                putText("[error]\n");
+            else
+                putText("[saved]\n");
+            
             myFile = NULL;
-            putText("[saved]\n");
             return;
         }
         fputc(c, myFile);
