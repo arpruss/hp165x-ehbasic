@@ -65,7 +65,7 @@ $(BUILDDIR)/%.s.o: %.s
 	mkdir -p $(@D)
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-$(BUILDDIR)/%.x68.o: %.x68
+$(BUILDDIR)/%.x68.o: %.x68 basic68k.inc
 	mkdir -p $(@D)
 	$(VASM) -Felf -o $@ $<
 

@@ -2,7 +2,7 @@
 * This lot is in RAM
 
     org 0
-ram_strt	ds.l	$100			* allow 1K for the stack, this should be plenty
+ram_strt	ds.l	$1000			* allow 4K for the stack, this should be plenty
 						* for any BASIC program that doesn't do something
 						* silly, it could even be much less.
 ram_base
