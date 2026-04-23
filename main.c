@@ -5,7 +5,7 @@
 #include <hp165x.h>
 
 #define WIDTH 80
-#define MEMORY_SIZE (400*1024)
+#define MEMORY_SIZE (800*1024)
 
 #define MAX_PICK_FILES 144
 
@@ -20,7 +20,7 @@ static uint16_t numPickFiles;
 #define WRITE_OVERLAY_BACKGROUND 0b100000000001
 #define WRITE_OVERLAY_ERASE 	 0b111000000001
 
-#define WIN_X1 6
+#define WIN_X1 10
 #define WIN_X2 (WIDTH-WIN_X1)
 #define WIN_Y1 3
 #define WIN_Y2 (28-WIN_Y1)
@@ -31,35 +31,31 @@ static uint16_t savedFore;
 static uint16_t savedBack;
 
 static char* pickFileNamer(unsigned short i) {
-	DirEntry_t d;
+	ROMDirEntry_t* dp = fastGetROMDirEntry(i);
+    if (dp == NULL)
+        return "";
 	static char name[MAX_FILENAME_LENGTH+1];
-	
-	if (-1 != getDirEntry(pickFileList[i], &d)) {
-		strcpy(name, d.name);
-		return name;
-	}
-	else {
-		return "";
-	}
+    unpadFilename(name, dp->name);
+    return name;
 }
 
 static int compareFiles(const void* p1, const void* p2) {
-    DirEntry_t d1;
-    DirEntry_t d2;
-    d1.name[0] = 0;
-    d2.name[0] = 0;
-    getDirEntry(*(uint16_t*)p1, &d1);
-    getDirEntry(*(uint16_t*)p2, &d2);
-    return strcasecmp(d1.name, d2.name);
+    char* n1 = (char*)fastGetROMDirEntry(*(uint16_t*)p1)->name;
+    char* n2 = (char*)fastGetROMDirEntry(*(uint16_t*)p2)->name;
+    return strncasecmp(n1, n2, MAX_FILENAME_LENGTH);
 }
 
 static unsigned short pickFileLoader(void) {
-	DirEntry_t d;
+    if (refreshDir()<0)
+        return 0;
+    
+	ROMDirEntry_t* dp;
 	int i = 0;
 	numPickFiles = 0;
-	while (-1 != getDirEntry(i, &d) && numPickFiles < MAX_PICK_FILES) {
-        if (d.type == 1) 
+	while (NULL != (dp=fastGetROMDirEntry(i)) && numPickFiles < MAX_PICK_FILES) {
+        if (dp->type == 1) {
             pickFileList[numPickFiles++] = i;
+        }
 		i++;
 	}
     
