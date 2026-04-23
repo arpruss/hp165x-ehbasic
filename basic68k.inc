@@ -2,7 +2,7 @@
 * This lot is in RAM
 
     org 0
-ram_strt	ds.l	$1000			* allow 4K for the stack, this should be plenty
+ram_strt	ds.l	$1000			* allow 16K for the stack, this should be plenty
 						* for any BASIC program that doesn't do something
 						* silly, it could even be much less.
 ram_base
@@ -189,12 +189,7 @@ ccnull	ds.b	1			* CTRL-C last received byte 'life' timer
 
 * these variables for load/save routines
 
- ifne   FLASH_SUPPORT
-
-load_first      ds.b    1               * Boolean indicating if first byte read
 load_filename   ds.b    13              * Hold LOAD/SAVE filename (DOS 8.3 format plus terminating null)
-
- endc
 
 		even			* dummy even value and zero pad byte
 
