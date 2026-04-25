@@ -278,29 +278,9 @@ VEC_SV
         MOVEM.L         (A7)+,A0-A1/D1
         MOVE.B          D1,(A0)
         BRA             LAB_SAVE_OPENED
-
 LAB_SAVE_NO_NAME
-        LEA             LAB_FILENAME(PC),A0             * Prompt for filename.
-        BSR             PRINTSTRING1                    * Print null terminated string
-        MOVE.L          A3,A2                           * Save pointer to RAM variables
-GETFN   JSR             VEC_IN                          * Get character
-        BCC             GETFN                           * Go back if carry clear, indicating no key pressed
-        JSR             VEC_OUT                         * Echo the character
-        CMP.B           #$0D,D0                         * Was it <Return>?
-        BEQ             ENDLN                           * If so, branch
-        CMP.B           #$7F,D0                         * Was it <Delete>?
-        BEQ             DELETE                          * If so, handle delete
-        CMP.B           #$08,D0                         * Was it <Backspace?
-        BEQ             DELETE                          * If so, handle as delete
-        MOVE.B          D0,load_filename(A2)            * Save in buffer
-        ADDQ.L          #1,A2                           * Advance string pointer
-        BRA             GETFN                           * Go back and get next character
-DELETE  SUBQ.L          #1,A2                           * Delete last character entered
-        BRA             GETFN                           * Go back and get next character
-
-ENDLN   MOVE.B          #0,load_filename(A2)            * Add terminating null to filename
         MOVEM.L         A0-A1/D1,-(A7)
-        PEA             load_filename(A3)
+        CLR.L           -(A7)
         JSR             openWriteFile
         ADDQ            #4,A7
         MOVEM.L         (A7)+,A0-A1/D1
@@ -434,7 +414,7 @@ LAB_sizok
 
 	LEA		LAB_1274(pc),a0		* get warm start vector
 	MOVE.l	a0,Wrmjpv(a3)		* set warm start vector
-	BSR		LAB_RND			* initialise
+*	BSR		LAB_RND			* initialise
 	JMP		LAB_WARM(a3)		* go do warm start
 
 

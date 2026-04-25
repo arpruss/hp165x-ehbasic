@@ -125,6 +125,7 @@ FAC_sc	EQU	FAC2_e+2		* FAC sign comparison, Acc#1 vs #2
 flag		EQU	FAC2_e+3		* flag byte for divide routine
 
 PRNlword	ds.l	1			* PRNG seed long word
+    global PRNlword
 
 ut1_pl	ds.l	1			* utility pointer 1
 
@@ -186,10 +187,6 @@ Iclim		ds.b	1			* input column limit
 ccflag	ds.b	1			* CTRL-C check flag
 ccbyte	ds.b	1			* CTRL-C last received byte
 ccnull	ds.b	1			* CTRL-C last received byte 'life' timer
-
-* these variables for load/save routines
-
-load_filename   ds.b    13              * Hold LOAD/SAVE filename (DOS 8.3 format plus terminating null)
 
 		even			* dummy even value and zero pad byte
 

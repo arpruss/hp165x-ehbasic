@@ -67,7 +67,7 @@ $(BUILDDIR)/%.s.o: %.s
 
 $(BUILDDIR)/%.x68.o: %.x68 basic68k.inc
 	mkdir -p $(@D)
-	$(VASM) -Felf -o $@ $<
+	$(VASM) -Felf -L build/basic68k.lst -o $@ $<
 
 -include $(DEPS)
 

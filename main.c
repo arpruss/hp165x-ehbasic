@@ -113,8 +113,14 @@ uint8_t openReadFile(const char* n) {
 }
 
 uint8_t openWriteFile(const char* n) {
-    if (*n == 0)
-        return 0;
+    char inputFilename[MAX_FILENAME_LENGTH+1];
+    
+    if (n == NULL) {
+        putText("Filename to save to? ");
+        if (getText(inputFilename,sizeof(inputFilename)) < 0 || *inputFilename == 0)
+            return 0;
+        n = inputFilename;
+    }
     if (myFile != NULL)
         fclose(myFile);
     myFile = fopen(n, "w");
@@ -210,6 +216,8 @@ void __attribute__((noinline)) drawString(char* s) {
     updateTextCursor(1);
 }
 
+extern uint8_t PRNlword; // relative to start of memory[]
+
 int
 main(int argc, char** argv) {
 	(void)argc;
@@ -217,6 +225,8 @@ main(int argc, char** argv) {
 	
 	initKeyboard(1);
 	initScreen(392, WRITE_BLACK);
+    
+    *(uint32_t*)(memory+(uint32_t)&PRNlword) = getSeed32();
     
     asm("move.l #memory,%A0\n"
         "move.l #" _QUOTE(MEMORY_SIZE) ",%D0\n"
