@@ -31,7 +31,7 @@ static uint16_t savedFore;
 static uint16_t savedBack;
 
 static char* pickFileNamer(unsigned short i) {
-	ROMDirEntry_t* dp = fastGetROMDirEntry(i);
+	ROMDirEntry_t* dp = getROMDirEntry(i);
     if (dp == NULL)
         return "";
 	static char name[MAX_FILENAME_LENGTH+1];
@@ -40,8 +40,8 @@ static char* pickFileNamer(unsigned short i) {
 }
 
 static int compareFiles(const void* p1, const void* p2) {
-    char* n1 = (char*)fastGetROMDirEntry(*(uint16_t*)p1)->name;
-    char* n2 = (char*)fastGetROMDirEntry(*(uint16_t*)p2)->name;
+    char* n1 = (char*)getROMDirEntry(*(uint16_t*)p1)->name;
+    char* n2 = (char*)getROMDirEntry(*(uint16_t*)p2)->name;
     return strncasecmp(n1, n2, MAX_FILENAME_LENGTH);
 }
 
@@ -52,12 +52,13 @@ static unsigned short pickFileLoader(void) {
 	ROMDirEntry_t* dp;
 	int i = 0;
 	numPickFiles = 0;
-	while (NULL != (dp=fastGetROMDirEntry(i)) && numPickFiles < MAX_PICK_FILES) {
+	while (NULL != (dp=getROMDirEntry(i)) && numPickFiles < MAX_PICK_FILES) {
         if (dp->type == 1) {
             pickFileList[numPickFiles++] = i;
         }
 		i++;
 	}
+    delayTicks(500);
     
     if (numPickFiles > 0) {
         qsort(pickFileList, numPickFiles, sizeof(uint16_t), compareFiles);
