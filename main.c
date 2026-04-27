@@ -58,7 +58,6 @@ static unsigned short pickFileLoader(void) {
         }
 		i++;
 	}
-    delayTicks(500);
     
     if (numPickFiles > 0) {
         qsort(pickFileList, numPickFiles, sizeof(uint16_t), compareFiles);
